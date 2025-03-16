@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import WelcomeCard from '@/components/dashboard/WelcomeCard';
+import ActivityFeed from '@/components/dashboard/ActivityFeed';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -46,7 +47,14 @@ const DashboardPage = () => {
       <main className="lg:pl-64 pt-16">
         <div className="p-4 md:p-8 space-y-6">
           <WelcomeCard greetingTime={greetingTime} />
-          <Outlet />
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="md:col-span-2">
+              <Outlet />
+            </div>
+            <div className="md:col-span-1">
+              <ActivityFeed />
+            </div>
+          </div>
         </div>
       </main>
     </div>

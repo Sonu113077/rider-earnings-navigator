@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { BarChart3, TrendingUp, Calendar, Download, Filter, RefreshCw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 
 // Mock data
 const MOCK_EARNINGS = [
@@ -15,16 +16,77 @@ const MOCK_EARNINGS = [
   { week: 'Week 6', amount: 521 },
 ];
 
+const MOCK_REPORTS = [
+  { id: 1, name: 'Monthly Earnings #1', type: 'Earnings', period: 'Oct 2023', generated: 'Nov 1, 2023', fileName: 'earnings-oct-2023.pdf' },
+  { id: 2, name: 'Monthly Earnings #2', type: 'Earnings', period: 'Nov 2023', generated: 'Dec 1, 2023', fileName: 'earnings-nov-2023.pdf' },
+  { id: 3, name: 'Monthly Earnings #3', type: 'Earnings', period: 'Dec 2023', generated: 'Jan 1, 2024', fileName: 'earnings-dec-2023.pdf' },
+  { id: 4, name: 'Activity Report #1', type: 'Activity', period: 'Q4 2023', generated: 'Jan 5, 2024', fileName: 'activity-q4-2023.pdf' },
+  { id: 5, name: 'Attendance Report #1', type: 'Attendance', period: 'Year 2023', generated: 'Jan 10, 2024', fileName: 'attendance-2023.pdf' },
+];
+
 const DashboardReportsPage = () => {
   const { toast } = useToast();
   const [period, setPeriod] = useState('month');
   const [reportType, setReportType] = useState('earnings');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [reports, setReports] = useState(MOCK_REPORTS);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const handleDownloadReport = () => {
+    setIsGenerating(true);
     toast({
-      title: "Downloading report",
+      title: "Generating report",
       description: "Your report is being generated and will download shortly.",
     });
+    
+    // Simulate report generation delay
+    setTimeout(() => {
+      setIsGenerating(false);
+      
+      // Create a new report
+      const newReport = {
+        id: reports.length + 1,
+        name: `${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report #${reports.filter(r => r.type.toLowerCase() === reportType).length + 1}`,
+        type: reportType.charAt(0).toUpperCase() + reportType.slice(1),
+        period: period === 'custom' ? `${startDate} to ${endDate}` : period.charAt(0).toUpperCase() + period.slice(1),
+        generated: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        fileName: `${reportType}-${period}-${new Date().getTime()}.pdf`
+      };
+      
+      setReports([newReport, ...reports]);
+      
+      toast({
+        title: "Report generated",
+        description: "Your report has been generated and is ready to download.",
+      });
+    }, 2000);
+  };
+
+  const handleDownloadExistingReport = (report) => {
+    toast({
+      title: "Downloading report",
+      description: `Downloading ${report.name}...`,
+    });
+    
+    // Create a dummy file for download demonstration
+    setTimeout(() => {
+      // Create a blob that represents a PDF-like file (though it's not a real PDF)
+      const blob = new Blob(['This is a dummy report file content'], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = report.fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Download complete",
+        description: `${report.name} has been downloaded.`,
+      });
+    }, 500);
   };
 
   return (
@@ -78,17 +140,41 @@ const DashboardReportsPage = () => {
               <div className="grid gap-2">
                 <div>
                   <label className="text-sm font-medium mb-1 block">Start Date</label>
-                  <input type="date" className="w-full px-3 py-2 border border-input rounded-md" />
+                  <input 
+                    type="date" 
+                    className="w-full px-3 py-2 border border-input rounded-md"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-1 block">End Date</label>
-                  <input type="date" className="w-full px-3 py-2 border border-input rounded-md" />
+                  <input 
+                    type="date" 
+                    className="w-full px-3 py-2 border border-input rounded-md"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
                 </div>
               </div>
             )}
             
-            <Button className="w-full" onClick={handleDownloadReport}>
-              <Download className="mr-2 h-4 w-4" /> Download Report
+            <Button 
+              className="w-full" 
+              onClick={handleDownloadReport}
+              disabled={isGenerating || (period === 'custom' && (!startDate || !endDate))}
+            >
+              {isGenerating ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> 
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Download className="mr-2 h-4 w-4" /> 
+                  Generate Report
+                </>
+              )}
             </Button>
           </CardContent>
         </Card>
@@ -191,30 +277,32 @@ const DashboardReportsPage = () => {
           <CardDescription>Browse and download your reports</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <div className="grid grid-cols-5 border-b px-4 py-3 font-medium">
-              <div>Report Name</div>
-              <div>Type</div>
-              <div>Period</div>
-              <div>Generated</div>
-              <div className="text-right">Action</div>
-            </div>
-            <div className="divide-y">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="grid grid-cols-5 px-4 py-3 items-center">
-                  <div>Monthly Earnings #{i}</div>
-                  <div>Earnings</div>
-                  <div>Oct 2023</div>
-                  <div>Nov 1, 2023</div>
-                  <div className="text-right">
-                    <Button variant="ghost" size="sm">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Report Name</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Period</TableHead>
+                <TableHead>Generated</TableHead>
+                <TableHead className="text-right">Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {reports.map((report) => (
+                <TableRow key={report.id}>
+                  <TableCell className="font-medium">{report.name}</TableCell>
+                  <TableCell>{report.type}</TableCell>
+                  <TableCell>{report.period}</TableCell>
+                  <TableCell>{report.generated}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" onClick={() => handleDownloadExistingReport(report)}>
                       <Download className="h-4 w-4" />
                     </Button>
-                  </div>
-                </div>
+                  </TableCell>
+                </TableRow>
               ))}
-            </div>
-          </div>
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>
