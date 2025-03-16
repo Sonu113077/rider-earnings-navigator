@@ -19,6 +19,10 @@ import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
+// Create settings and reports pages
+import DashboardSettingsPage from "./pages/dashboard/DashboardSettingsPage";
+import DashboardReportsPage from "./pages/dashboard/DashboardReportsPage";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -37,6 +41,9 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}>
               <Route index element={<SearchEarningsPage />} />
               <Route path="profile" element={<UserProfilePage />} />
+              <Route path="search" element={<SearchEarningsPage />} />
+              <Route path="reports" element={<DashboardReportsPage />} />
+              <Route path="settings" element={<DashboardSettingsPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
             </Route>
             
