@@ -8,7 +8,16 @@ import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
+import UserProfilePage from "./pages/dashboard/UserProfilePage";
+import SearchEarningsPage from "./pages/dashboard/SearchEarningsPage";
+import NotificationsPage from "./pages/dashboard/NotificationsPage";
+import AdminUsersPage from "./pages/admin/AdminUsersPage";
+import AdminEarningsPage from "./pages/admin/AdminEarningsPage";
+import AdminBulkUploadPage from "./pages/admin/AdminBulkUploadPage";
 import NotFound from "./pages/NotFound";
+import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -18,13 +27,29 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/dashboard/*" element={<DashboardPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            
+            {/* User Dashboard Routes */}
+            <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}>
+              <Route index element={<SearchEarningsPage />} />
+              <Route path="profile" element={<UserProfilePage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+            </Route>
+            
+            {/* Admin Dashboard Routes */}
+            <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboardPage /></ProtectedRoute>}>
+              <Route index element={<AdminUsersPage />} />
+              <Route path="earnings" element={<AdminEarningsPage />} />
+              <Route path="upload" element={<AdminBulkUploadPage />} />
+            </Route>
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

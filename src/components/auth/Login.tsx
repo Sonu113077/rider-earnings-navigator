@@ -1,7 +1,9 @@
 
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -9,9 +11,20 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   
+  const { login, isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get the redirect path from location state or default routes
+  const from = location.state?.from?.pathname || '/dashboard';
+  
+  useEffect(() => {
+    // If user is already authenticated, redirect to the appropriate dashboard
+    if (isAuthenticated) {
+      navigate(isAdmin ? '/admin' : '/dashboard');
+    }
+  }, [isAuthenticated, isAdmin, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,23 +35,20 @@ const Login = () => {
     }
     
     setError('');
-    setIsLoading(true);
     
-    // Simulate API call
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const success = await login(email, password, rememberMe);
       
-      // For demo purposes - in a real app, this would be an API check
-      if (email === 'admin@example.com' && password === 'password') {
-        // Success - navigate to dashboard
-        navigate('/dashboard');
-      } else {
-        setError('Invalid credentials. Please try again.');
+      if (success) {
+        // Redirect to the appropriate dashboard based on role
+        if (email === 'admin@example.com') {
+          navigate('/admin');
+        } else {
+          navigate(from);
+        }
       }
     } catch (err) {
       setError('An error occurred. Please try again.');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -47,6 +57,15 @@ const Login = () => {
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold">Welcome back</h1>
         <p className="text-muted-foreground">Sign in to your account to continue</p>
+      </div>
+
+      {/* Test Credentials Info */}
+      <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+        <p className="text-sm font-medium">Test Credentials:</p>
+        <div className="text-xs space-y-1">
+          <p><span className="font-semibold">Admin:</span> admin@example.com / admin123</p>
+          <p><span className="font-semibold">User:</span> user@example.com / user123</p>
+        </div>
       </div>
       
       {error && (
@@ -123,19 +142,9 @@ const Login = () => {
         
         <button
           type="submit"
-          className={`w-full btn-primary h-11 relative ${isLoading ? 'opacity-90' : ''}`}
-          disabled={isLoading}
+          className="w-full btn-primary h-11 relative"
         >
-          {isLoading ? (
-            <>
-              <span className="opacity-0">Sign in</span>
-              <span className="absolute inset-0 flex items-center justify-center">
-                <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              </span>
-            </>
-          ) : (
-            'Sign in'
-          )}
+          Sign in
         </button>
       </form>
       
