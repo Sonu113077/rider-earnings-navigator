@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { 
   BarChart, Calendar, ChevronDown, ChevronUp, Download, 
-  FileDown, Filter, Search, User, Users, XCircle, Printer, ExternalLink 
+  FileDown, Filter, Search, User, Users, XCircle, Printer, 
+  ExternalLink, Eye 
 } from 'lucide-react';
 import {
   BarChart as RechartsBarChart,

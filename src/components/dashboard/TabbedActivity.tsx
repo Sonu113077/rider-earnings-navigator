@@ -22,7 +22,7 @@ const TabbedActivity = () => {
   useEffect(() => {
     // Simulate loading activities and safrates from an API
     setTimeout(() => {
-      const allActivities = [
+      const allActivities: Activity[] = [
         {
           id: '1',
           type: 'user_update',
@@ -60,7 +60,7 @@ const TabbedActivity = () => {
         }
       ];
       
-      const safrateActivities = [
+      const safrateActivities: Activity[] = [
         {
           id: 's1',
           type: 'safrate_update',

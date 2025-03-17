@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { 
   Users, CheckCircle, XCircle, Shield, UserCheck, UserX, Trash2, 
@@ -58,7 +57,6 @@ const MOCK_USERS = [
     registeredDate: '2023-08-10T08:15:00',
     lastActive: '2023-10-15T13:40:00'
   },
-  // New test users for pending approvals
   {
     id: 'user5',
     username: 'testuser1',
@@ -170,7 +168,9 @@ const AdminUsersPage = () => {
     if (window.confirm('Are you sure you want to permanently delete this user?')) {
       setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
       toast.success("User deleted successfully");
+      return true;
     }
+    return false;
   };
   
   const handleUserClick = (user: any) => {
@@ -552,7 +552,8 @@ const AdminUsersPage = () => {
                     <Button 
                       variant="destructive"
                       onClick={() => {
-                        if (handleDeleteUser(selectedUser.id)) {
+                        const isDeleted = handleDeleteUser(selectedUser.id);
+                        if (isDeleted) {
                           setIsUserDetailsOpen(false);
                         }
                       }}
