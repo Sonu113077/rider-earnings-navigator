@@ -1,9 +1,12 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Users, CheckCircle, XCircle, Shield, UserCheck, UserX, Trash2, 
-  Filter, Search, RefreshCw, UserPlus
+  Filter, Search, RefreshCw, UserPlus, Eye
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 // Mock users data
 const MOCK_USERS = [
@@ -54,6 +57,31 @@ const MOCK_USERS = [
     isBlocked: true,
     registeredDate: '2023-08-10T08:15:00',
     lastActive: '2023-10-15T13:40:00'
+  },
+  // New test users for pending approvals
+  {
+    id: 'user5',
+    username: 'testuser1',
+    fullName: 'Test User 1',
+    email: 'test1@example.com',
+    mobile: '9876543214',
+    role: 'user',
+    isApproved: false,
+    isBlocked: false,
+    registeredDate: '2023-11-05T09:30:00',
+    lastActive: null
+  },
+  {
+    id: 'user6',
+    username: 'testuser2',
+    fullName: 'Test User 2',
+    email: 'test2@example.com',
+    mobile: '9876543215',
+    role: 'user',
+    isApproved: false,
+    isBlocked: false,
+    registeredDate: '2023-11-07T14:20:00',
+    lastActive: null
   }
 ];
 
@@ -64,6 +92,8 @@ const AdminUsersPage = () => {
   const [filteredUsers, setFilteredUsers] = useState(MOCK_USERS);
   const [statusFilter, setStatusFilter] = useState<UserStatus>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [isUserDetailsOpen, setIsUserDetailsOpen] = useState(false);
   
   const applyFilters = () => {
     let result = [...users];
@@ -92,19 +122,17 @@ const AdminUsersPage = () => {
     setFilteredUsers(result);
   };
   
-  // Immediately apply filters when search or filter changes
-  useState(() => {
+  // Apply filters when search or filter changes
+  useEffect(() => {
     applyFilters();
-  });
+  }, [statusFilter, searchTerm, users]);
   
   const handleFilterChange = (status: UserStatus) => {
     setStatusFilter(status);
-    setTimeout(applyFilters, 0);
   };
   
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    setTimeout(applyFilters, 0);
   };
   
   const handleApproveUser = (userId: string) => {
@@ -113,29 +141,45 @@ const AdminUsersPage = () => {
         user.id === userId ? { ...user, isApproved: true } : user
       )
     );
-    setTimeout(applyFilters, 0);
+    toast.success("User approved successfully");
   };
   
   const handleRejectUser = (userId: string) => {
-    // In a real app, this might delete the user or mark them as rejected
-    setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
-    setTimeout(applyFilters, 0);
+    if (window.confirm('Are you sure you want to reject this user?')) {
+      setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+      toast.success("User rejected successfully");
+    }
   };
   
   const handleToggleBlock = (userId: string) => {
-    setUsers(prevUsers => 
-      prevUsers.map(user => 
+    setUsers(prevUsers => {
+      const updatedUsers = prevUsers.map(user => 
         user.id === userId ? { ...user, isBlocked: !user.isBlocked } : user
-      )
-    );
-    setTimeout(applyFilters, 0);
+      );
+      
+      const user = updatedUsers.find(u => u.id === userId);
+      if (user) {
+        toast.success(`User ${user.isBlocked ? 'blocked' : 'unblocked'} successfully`);
+      }
+      
+      return updatedUsers;
+    });
   };
   
   const handleDeleteUser = (userId: string) => {
     if (window.confirm('Are you sure you want to permanently delete this user?')) {
       setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
-      setTimeout(applyFilters, 0);
+      toast.success("User deleted successfully");
     }
+  };
+  
+  const handleUserClick = (user: any) => {
+    setSelectedUser(user);
+    setIsUserDetailsOpen(true);
+  };
+  
+  const handleFilterByStatus = (status: UserStatus) => {
+    setStatusFilter(status);
   };
   
   const formatDate = (dateString: string | null) => {
@@ -167,7 +211,10 @@ const AdminUsersPage = () => {
       
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-card rounded-lg shadow p-4 border-l-4 border-primary">
+        <div 
+          className="bg-card rounded-lg shadow p-4 border-l-4 border-primary cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => handleFilterByStatus('all')}
+        >
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
               <Users size={20} />
@@ -179,7 +226,10 @@ const AdminUsersPage = () => {
           </div>
         </div>
         
-        <div className="bg-card rounded-lg shadow p-4 border-l-4 border-green-500">
+        <div 
+          className="bg-card rounded-lg shadow p-4 border-l-4 border-green-500 cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => handleFilterByStatus('approved')}
+        >
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
               <UserCheck size={20} />
@@ -191,7 +241,10 @@ const AdminUsersPage = () => {
           </div>
         </div>
         
-        <div className="bg-card rounded-lg shadow p-4 border-l-4 border-amber-500">
+        <div 
+          className="bg-card rounded-lg shadow p-4 border-l-4 border-amber-500 cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => handleFilterByStatus('pending')}
+        >
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500">
               <Shield size={20} />
@@ -203,7 +256,10 @@ const AdminUsersPage = () => {
           </div>
         </div>
         
-        <div className="bg-card rounded-lg shadow p-4 border-l-4 border-red-500">
+        <div 
+          className="bg-card rounded-lg shadow p-4 border-l-4 border-red-500 cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => handleFilterByStatus('blocked')}
+        >
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500">
               <UserX size={20} />
@@ -250,8 +306,6 @@ const AdminUsersPage = () => {
             
             <button
               onClick={() => {
-                setUsers(MOCK_USERS);
-                setFilteredUsers(MOCK_USERS);
                 setSearchTerm('');
                 setStatusFilter('all');
               }}
@@ -289,7 +343,10 @@ const AdminUsersPage = () => {
                 filteredUsers.map((user) => (
                   <tr key={user.id} className={user.isBlocked ? 'bg-destructive/5' : ''}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
+                      <div 
+                        className="flex items-center cursor-pointer hover:bg-muted/30 p-1 rounded-md"
+                        onClick={() => handleUserClick(user)}
+                      >
                         <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                           <span className="text-xs font-bold">
                             {user.fullName.split(' ').map(n => n[0]).join('')}
@@ -383,6 +440,133 @@ const AdminUsersPage = () => {
           </table>
         </div>
       </div>
+      
+      {/* User Detail Dialog */}
+      <Dialog open={isUserDetailsOpen} onOpenChange={setIsUserDetailsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>User Details</DialogTitle>
+            <DialogDescription>
+              Detailed information about the user.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedUser && (
+            <div className="space-y-4 py-4">
+              <div className="flex justify-center">
+                <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                  <span className="text-xl font-bold">
+                    {selectedUser.fullName.split(' ').map((n: string) => n[0]).join('')}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium">Full Name</p>
+                  <p className="text-sm text-muted-foreground">{selectedUser.fullName}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Username</p>
+                  <p className="text-sm text-muted-foreground">@{selectedUser.username}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Email</p>
+                  <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Mobile</p>
+                  <p className="text-sm text-muted-foreground">{selectedUser.mobile}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Role</p>
+                  <p className="text-sm text-muted-foreground capitalize">{selectedUser.role}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Status</p>
+                  <p className="text-sm">
+                    {selectedUser.isBlocked ? (
+                      <span className="text-destructive">Blocked</span>
+                    ) : selectedUser.isApproved ? (
+                      <span className="text-green-600 dark:text-green-400">Active</span>
+                    ) : (
+                      <span className="text-amber-600 dark:text-amber-400">Pending</span>
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Registered</p>
+                  <p className="text-sm text-muted-foreground">{formatDate(selectedUser.registeredDate)}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Last Active</p>
+                  <p className="text-sm text-muted-foreground">{formatDate(selectedUser.lastActive)}</p>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-2 pt-4">
+                {!selectedUser.isApproved ? (
+                  <>
+                    <Button 
+                      variant="default" 
+                      onClick={() => {
+                        handleApproveUser(selectedUser.id);
+                        setIsUserDetailsOpen(false);
+                      }}
+                    >
+                      <CheckCircle size={16} className="mr-2" />
+                      Approve User
+                    </Button>
+                    <Button 
+                      variant="destructive"
+                      onClick={() => {
+                        handleRejectUser(selectedUser.id);
+                        setIsUserDetailsOpen(false);
+                      }}
+                    >
+                      <XCircle size={16} className="mr-2" />
+                      Reject User
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button 
+                      variant={selectedUser.isBlocked ? "default" : "outline"}
+                      onClick={() => {
+                        handleToggleBlock(selectedUser.id);
+                        setIsUserDetailsOpen(false);
+                      }}
+                    >
+                      {selectedUser.isBlocked ? (
+                        <>
+                          <UserCheck size={16} className="mr-2" />
+                          Unblock User
+                        </>
+                      ) : (
+                        <>
+                          <UserX size={16} className="mr-2" />
+                          Block User
+                        </>
+                      )}
+                    </Button>
+                    <Button 
+                      variant="destructive"
+                      onClick={() => {
+                        if (handleDeleteUser(selectedUser.id)) {
+                          setIsUserDetailsOpen(false);
+                        }
+                      }}
+                    >
+                      <Trash2 size={16} className="mr-2" />
+                      Delete User
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
