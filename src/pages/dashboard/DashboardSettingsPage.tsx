@@ -1,407 +1,383 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Settings, User, Bell, Lock, Moon, Sun, Monitor } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-
-const passwordSchema = z.object({
-  currentPassword: z.string().min(1, "Current password is required"),
-  newPassword: z.string().min(8, "Password must be at least 8 characters"),
-  confirmPassword: z.string().min(8, "Password must be at least 8 characters"),
-}).refine(data => data.newPassword === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
-});
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { Sun, Moon, Laptop, Lock, Smartphone, Eye, EyeOff, Info } from "lucide-react";
 
 const DashboardSettingsPage = () => {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'system');
-  const [passwordOpen, setPasswordOpen] = useState(false);
-  const [twoFactorOpen, setTwoFactorOpen] = useState(false);
+  
+  // Security settings
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [twoFactorVerifying, setTwoFactorVerifying] = useState(false);
-  const [emailNotifs, setEmailNotifs] = useState(true);
-  const [appNotifs, setAppNotifs] = useState(true);
-  const [earningsNotifs, setEarningsNotifs] = useState(true);
-  const [systemAlerts, setSystemAlerts] = useState(true);
-  const [verificationCode, setVerificationCode] = useState('');
-
-  const passwordForm = useForm({
-    resolver: zodResolver(passwordSchema),
-    defaultValues: {
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    },
-  });
-
-  const handleSaveSettings = () => {
-    toast({
-      title: "Settings saved",
-      description: "Your preferences have been updated successfully.",
-    });
-  };
-
-  const handlePasswordChange = (values) => {
-    toast({
-      title: "Password changed",
-      description: "Your password has been updated successfully.",
-    });
-    setPasswordOpen(false);
-    passwordForm.reset();
-  };
   
-  const handleTwoFactorSetup = () => {
-    setTwoFactorVerifying(true);
-  };
+  // Display settings
+  const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
+  const [compactView, setCompactView] = useState(false);
+  const [highContrastMode, setHighContrastMode] = useState(false);
   
-  const handleTwoFactorVerify = () => {
-    if (verificationCode === '123456') {
-      setTwoFactorEnabled(true);
-      setTwoFactorVerifying(false);
-      setTwoFactorOpen(false);
+  // Notification settings
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [pushNotifications, setPushNotifications] = useState(true);
+  const [earningSummaries, setEarningSummaries] = useState(true);
+  const [routeUpdates, setRouteUpdates] = useState(true);
+  
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newPassword !== confirmPassword) {
       toast({
-        title: "Two-factor authentication enabled",
-        description: "Your account is now more secure.",
-      });
-    } else {
-      toast({
-        title: "Invalid code",
-        description: "The verification code you entered is incorrect.",
+        title: "Passwords don't match",
+        description: "Please make sure your passwords match.",
         variant: "destructive",
       });
+      return;
     }
-  };
-
-  const handleThemeChange = (newTheme) => {
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
     
-    // Apply theme change
-    if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else if (newTheme === 'light') {
-      document.documentElement.classList.remove('dark');
-    } else {
-      // System preference
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (systemPrefersDark) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    }
+    // In a real app, this would call an API to change the password
+    toast({
+      title: "Password Updated",
+      description: "Your password has been successfully changed.",
+    });
+    
+    // Reset form
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+  };
+  
+  const handleToggleTwoFactor = () => {
+    setTwoFactorEnabled(!twoFactorEnabled);
     
     toast({
-      title: "Theme updated",
-      description: `Theme changed to ${newTheme}.`,
+      title: twoFactorEnabled ? "Two-Factor Authentication Disabled" : "Two-Factor Authentication Enabled",
+      description: twoFactorEnabled 
+        ? "Your account is now less secure. We recommend keeping two-factor authentication enabled."
+        : "Your account is now more secure with two-factor authentication.",
     });
   };
-
+  
+  const handleThemeChange = (value: "light" | "dark" | "system") => {
+    setTheme(value);
+    
+    // In a real app, this would apply the theme to the entire application
+    // For this example, we'll just show a toast notification
+    toast({
+      title: "Theme Updated",
+      description: `Theme changed to ${value} mode.`,
+    });
+    
+    // Apply theme to document
+    if (value === "dark") {
+      document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("light");
+    } else if (value === "light") {
+      document.documentElement.classList.add("light");
+      document.documentElement.classList.remove("dark");
+    } else {
+      // System theme would check system preferences
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      if (prefersDark) {
+        document.documentElement.classList.add("dark");
+        document.documentElement.classList.remove("light");
+      } else {
+        document.documentElement.classList.add("light");
+        document.documentElement.classList.remove("dark");
+      }
+    }
+  };
+  
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Settings className="h-7 w-7" /> 
-          Settings
-        </h1>
-        <p className="mt-2 text-muted-foreground">
-          Manage your account settings and preferences
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+        <p className="text-muted-foreground">Manage your account settings and preferences</p>
       </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5 text-primary" />
-              Account Settings
-            </CardTitle>
-            <CardDescription>
-              Manage your account information and preferences
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="emailNotifs">Email Notifications</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive email notifications for important updates
-                  </p>
-                </div>
-                <Switch 
-                  id="emailNotifs" 
-                  checked={emailNotifs} 
-                  onCheckedChange={setEmailNotifs} 
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="appNotifs">App Notifications</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive in-app notifications
-                  </p>
-                </div>
-                <Switch 
-                  id="appNotifs" 
-                  checked={appNotifs} 
-                  onCheckedChange={setAppNotifs} 
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-primary" />
-              Notification Preferences
-            </CardTitle>
-            <CardDescription>
-              Control what notifications you receive
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="earningsNotifs">Earnings Updates</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive notifications about new earnings reports
-                  </p>
-                </div>
-                <Switch 
-                  id="earningsNotifs" 
-                  checked={earningsNotifs} 
-                  onCheckedChange={setEarningsNotifs} 
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="systemAlerts">System Alerts</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive important system alerts and updates
-                  </p>
-                </div>
-                <Switch 
-                  id="systemAlerts" 
-                  checked={systemAlerts} 
-                  onCheckedChange={setSystemAlerts} 
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lock className="h-5 w-5 text-primary" />
-              Security Settings
-            </CardTitle>
-            <CardDescription>
-              Manage your account security options
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Dialog open={passwordOpen} onOpenChange={setPasswordOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="w-full">Change Password</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Change Password</DialogTitle>
-                  <DialogDescription>
-                    Update your password to a new secure one.
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...passwordForm}>
-                  <form onSubmit={passwordForm.handleSubmit(handlePasswordChange)} className="space-y-4">
-                    <FormField
-                      control={passwordForm.control}
-                      name="currentPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Current Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" {...field} />
-                          </FormControl>
-                        </FormItem>
-                      )}
+      
+      <Tabs defaultValue="security" className="w-full">
+        <TabsList className="grid grid-cols-3 w-full max-w-md">
+          <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="display">Display</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+        </TabsList>
+        
+        {/* Security Settings */}
+        <TabsContent value="security" className="mt-6 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" /> Change Password
+              </CardTitle>
+              <CardDescription>
+                Update your password to keep your account secure
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="current-password">Current Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="current-password"
+                      type={showPassword ? "text" : "password"}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      required
                     />
-                    <FormField
-                      control={passwordForm.control}
-                      name="newPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>New Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" {...field} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={passwordForm.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Confirm New Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" {...field} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <DialogFooter>
-                      <Button type="submit">Update Password</Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
-            
-            <Dialog open={twoFactorOpen} onOpenChange={setTwoFactorOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="w-full">
-                  {twoFactorEnabled ? 'Manage Two-Factor Authentication' : 'Enable Two-Factor Authentication'}
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Two-Factor Authentication</DialogTitle>
-                  <DialogDescription>
-                    {twoFactorEnabled 
-                      ? 'Manage your two-factor authentication settings.'
-                      : 'Add an extra layer of security to your account.'}
-                  </DialogDescription>
-                </DialogHeader>
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
                 
-                {twoFactorEnabled ? (
-                  <div className="space-y-4">
-                    <div className="rounded-lg bg-muted p-4">
-                      <div className="font-medium">Two-factor authentication is enabled</div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Your account is protected with an additional layer of security.
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <Input
+                    id="new-password"
+                    type={showPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm New Password</Label>
+                  <Input
+                    id="confirm-password"
+                    type={showPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <Button type="submit">Update Password</Button>
+              </form>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Smartphone className="h-5 w-5" /> Two-Factor Authentication
+              </CardTitle>
+              <CardDescription>
+                Add an extra layer of security to your account
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="two-factor">Enable Two-Factor Authentication</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Secure your account with a verification code sent to your phone
+                  </p>
+                </div>
+                <Switch
+                  id="two-factor"
+                  checked={twoFactorEnabled}
+                  onCheckedChange={handleToggleTwoFactor}
+                />
+              </div>
+              
+              {twoFactorEnabled && (
+                <div className="rounded-md bg-muted p-4 text-sm flex items-start gap-2">
+                  <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium">Two-Factor Authentication is enabled</p>
+                    <p className="text-muted-foreground mt-1">
+                      You'll be asked for a verification code when signing in on a new device.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* Display Settings */}
+        <TabsContent value="display" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Display Settings</CardTitle>
+              <CardDescription>
+                Customize how the dashboard looks and feels
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <Label>Theme</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    variant={theme === "light" ? "default" : "outline"}
+                    className="flex flex-col items-center justify-center gap-1 h-auto py-4"
+                    onClick={() => handleThemeChange("light")}
+                  >
+                    <Sun className="h-5 w-5" />
+                    <span>Light</span>
+                  </Button>
+                  
+                  <Button
+                    variant={theme === "dark" ? "default" : "outline"}
+                    className="flex flex-col items-center justify-center gap-1 h-auto py-4"
+                    onClick={() => handleThemeChange("dark")}
+                  >
+                    <Moon className="h-5 w-5" />
+                    <span>Dark</span>
+                  </Button>
+                  
+                  <Button
+                    variant={theme === "system" ? "default" : "outline"}
+                    className="flex flex-col items-center justify-center gap-1 h-auto py-4"
+                    onClick={() => handleThemeChange("system")}
+                  >
+                    <Laptop className="h-5 w-5" />
+                    <span>System</span>
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="compact-view">Compact View</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Reduce spacing and show more content on screen
+                    </p>
+                  </div>
+                  <Switch
+                    id="compact-view"
+                    checked={compactView}
+                    onCheckedChange={(checked) => {
+                      setCompactView(checked);
+                      toast({
+                        title: checked ? "Compact View Enabled" : "Compact View Disabled",
+                        description: checked 
+                          ? "Dashboard now shows more content with less spacing."
+                          : "Dashboard now shows content with standard spacing.",
+                      });
+                    }}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="high-contrast">High Contrast Mode</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Increase contrast for better visibility
+                    </p>
+                  </div>
+                  <Switch
+                    id="high-contrast"
+                    checked={highContrastMode}
+                    onCheckedChange={(checked) => {
+                      setHighContrastMode(checked);
+                      toast({
+                        title: checked ? "High Contrast Mode Enabled" : "High Contrast Mode Disabled",
+                        description: checked 
+                          ? "Dashboard now uses higher contrast for better visibility."
+                          : "Dashboard now uses standard contrast.",
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* Notification Settings */}
+        <TabsContent value="notifications" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Notification Settings</CardTitle>
+              <CardDescription>
+                Manage how and when you receive notifications
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium">Notification Channels</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="email-notifications">Email Notifications</Label>
+                    <Switch
+                      id="email-notifications"
+                      checked={emailNotifications}
+                      onCheckedChange={setEmailNotifications}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="push-notifications">Push Notifications</Label>
+                    <Switch
+                      id="push-notifications"
+                      checked={pushNotifications}
+                      onCheckedChange={setPushNotifications}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium">Notification Types</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="earning-summaries">Earning Summaries</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Receive weekly summaries of your earnings
                       </p>
                     </div>
-                    <Button 
-                      variant="destructive" 
-                      onClick={() => {
-                        setTwoFactorEnabled(false);
-                        setTwoFactorOpen(false);
-                        toast({
-                          title: "Two-factor authentication disabled",
-                          description: "Your account security settings have been updated.",
-                        });
-                      }}
-                    >
-                      Disable Two-Factor Authentication
-                    </Button>
+                    <Switch
+                      id="earning-summaries"
+                      checked={earningSummaries}
+                      onCheckedChange={setEarningSummaries}
+                    />
                   </div>
-                ) : twoFactorVerifying ? (
-                  <div className="space-y-4">
-                    <p className="text-sm">
-                      Enter the 6-digit verification code from your authenticator app.
-                      For demo purposes, the code is 123456.
-                    </p>
-                    <div className="space-y-2">
-                      <Label htmlFor="verificationCode">Verification Code</Label>
-                      <Input 
-                        id="verificationCode" 
-                        value={verificationCode} 
-                        onChange={(e) => setVerificationCode(e.target.value)} 
-                        maxLength={6}
-                        className="text-center text-xl tracking-widest"
-                      />
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="route-updates">Route Updates</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Get notified when your routes change
+                      </p>
                     </div>
-                    <DialogFooter>
-                      <Button onClick={handleTwoFactorVerify}>Verify</Button>
-                    </DialogFooter>
+                    <Switch
+                      id="route-updates"
+                      checked={routeUpdates}
+                      onCheckedChange={setRouteUpdates}
+                    />
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="bg-muted rounded-lg p-4 flex items-center justify-center">
-                      <div className="w-48 h-48 bg-white p-2 rounded-md flex items-center justify-center">
-                        <div className="text-center">
-                          <p className="text-black font-bold">QR Code</p>
-                          <p className="text-black text-xs mt-1">(For demo purposes)</p>
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Scan this QR code with your authenticator app or enter the setup key manually.
-                    </p>
-                    <div className="bg-muted p-2 rounded-md text-center">
-                      <code className="text-sm">ABCD-EFGH-IJKL-MNOP</code>
-                    </div>
-                    <DialogFooter>
-                      <Button onClick={handleTwoFactorSetup}>Continue</Button>
-                    </DialogFooter>
-                  </div>
-                )}
-              </DialogContent>
-            </Dialog>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Monitor className="h-5 w-5 text-primary" />
-              Display Settings
-            </CardTitle>
-            <CardDescription>
-              Customize your display preferences
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-2">
-              <Button
-                variant={theme === 'light' ? "default" : "outline"}
-                className="flex flex-col items-center gap-2 h-auto py-4" 
-                onClick={() => handleThemeChange('light')}
-              >
-                <Sun size={20} />
-                <span className="text-xs">Light</span>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={() => {
+                toast({
+                  title: "Notification Settings Saved",
+                  description: "Your notification preferences have been updated.",
+                });
+              }}>
+                Save Notification Settings
               </Button>
-              <Button
-                variant={theme === 'dark' ? "default" : "outline"}
-                className="flex flex-col items-center gap-2 h-auto py-4"
-                onClick={() => handleThemeChange('dark')}
-              >
-                <Moon size={20} />
-                <span className="text-xs">Dark</span>
-              </Button>
-              <Button
-                variant={theme === 'system' ? "default" : "outline"}
-                className="flex flex-col items-center gap-2 h-auto py-4"
-                onClick={() => handleThemeChange('system')}
-              >
-                <Monitor size={20} />
-                <span className="text-xs">System</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="flex justify-end">
-        <Button onClick={handleSaveSettings}>Save Settings</Button>
-      </div>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
