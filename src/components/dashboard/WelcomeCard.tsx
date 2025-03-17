@@ -1,6 +1,6 @@
 
 import { Link } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, IndianRupee } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -29,7 +29,7 @@ const WelcomeCard = ({ greetingTime }: WelcomeCardProps) => {
           
           <div className="flex flex-col sm:items-end gap-2">
             <div className="text-sm text-muted-foreground">Your recent earnings</div>
-            <div className="text-3xl font-bold">$1,254</div>
+            <div className="text-3xl font-bold">₹1,254</div>
             <div className="text-sm text-green-600 flex items-center">
               <span className="flex items-center">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="mr-1">

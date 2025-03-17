@@ -2,7 +2,7 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { ArrowUpRight, ArrowDownRight, ChevronsUpDown } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, ChevronsUpDown, IndianRupee } from "lucide-react";
 
 interface EarningsGraphProps {
   className?: string;
@@ -64,10 +64,10 @@ const EarningsGraph = ({ className }: EarningsGraphProps) => {
               <XAxis dataKey="name" tick={{ fontSize: 12 }} />
               <YAxis 
                 tick={{ fontSize: 12 }}
-                tickFormatter={(value) => `$${value}`}
+                tickFormatter={(value) => `₹${value}`}
               />
               <Tooltip 
-                formatter={(value) => [`$${value}`, 'Earnings']}
+                formatter={(value) => [`₹${value}`, 'Earnings']}
                 labelFormatter={(label) => `Month: ${label}`}
               />
               <Area 
@@ -83,12 +83,12 @@ const EarningsGraph = ({ className }: EarningsGraphProps) => {
         <div className="mt-4 flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-muted-foreground">Total Annual</p>
-            <p className="text-2xl font-bold">${data.reduce((sum, item) => sum + item.earnings, 0).toLocaleString()}</p>
+            <p className="text-2xl font-bold">₹{data.reduce((sum, item) => sum + item.earnings, 0).toLocaleString()}</p>
           </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground">Monthly Average</p>
             <p className="text-2xl font-bold">
-              ${(data.reduce((sum, item) => sum + item.earnings, 0) / data.length).toLocaleString(undefined, {maximumFractionDigits: 0})}
+              ₹{(data.reduce((sum, item) => sum + item.earnings, 0) / data.length).toLocaleString(undefined, {maximumFractionDigits: 0})}
             </p>
           </div>
         </div>

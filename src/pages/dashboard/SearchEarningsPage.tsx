@@ -1,6 +1,5 @@
-
 import { useState } from 'react';
-import { Search, Download, Filter, Calendar, User } from 'lucide-react';
+import { Search, Download, Filter, Calendar, User, IndianRupee } from 'lucide-react';
 
 // Mock data for rider earnings
 const MOCK_RIDER_DATA = [
@@ -212,7 +211,10 @@ const SearchEarningsPage = () => {
                           {earning.absent ? (
                             '—'
                           ) : (
-                            <span className="font-medium">₹{earning.amount.toFixed(2)}</span>
+                            <span className="font-medium flex items-center">
+                              <IndianRupee className="h-3 w-3 mr-1" />
+                              {earning.amount.toFixed(2)}
+                            </span>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -232,8 +234,9 @@ const SearchEarningsPage = () => {
                   <tfoot>
                     <tr className="bg-muted/50">
                       <th className="px-6 py-3 text-left font-medium">Total</th>
-                      <th className="px-6 py-3 text-left font-medium">
-                        ₹{rider.earnings.reduce((total, day) => total + day.amount, 0).toFixed(2)}
+                      <th className="px-6 py-3 text-left font-medium flex items-center">
+                        <IndianRupee className="h-3 w-3 mr-1" />
+                        {rider.earnings.reduce((total, day) => total + day.amount, 0).toFixed(2)}
                       </th>
                       <th className="px-6 py-3 text-left font-medium">
                         {rider.earnings.filter(e => e.absent).length} absent days

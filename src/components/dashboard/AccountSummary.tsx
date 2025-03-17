@@ -1,6 +1,6 @@
 
 import { Card, CardContent } from "@/components/ui/card";
-import { User, Calendar, Truck, Clock, MapPin } from "lucide-react";
+import { User, Calendar, Truck, Clock, MapPin, IndianRupee } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -25,7 +25,7 @@ const AccountSummary = () => {
     {
       title: "Next Payment",
       icon: Calendar,
-      content: "Dec 15, 2023 · $1,250 estimated",
+      content: "Dec 15, 2023 · ₹1,250 estimated",
       action: () => handleCardClick("/dashboard/search", "Payment Search"),
       color: "bg-green-500"
     },

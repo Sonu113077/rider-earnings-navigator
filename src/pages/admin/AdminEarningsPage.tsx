@@ -1,9 +1,8 @@
-
 import { useState } from 'react';
 import { 
   BarChart, Calendar, ChevronDown, ChevronUp, Download, 
   FileDown, Filter, Search, User, Users, XCircle, Printer, 
-  ExternalLink, Eye 
+  ExternalLink, Eye, IndianRupee 
 } from 'lucide-react';
 import {
   BarChart as RechartsBarChart,
@@ -27,7 +26,6 @@ import {
   TableRow 
 } from "@/components/ui/table";
 
-// Mock earnings data
 const MOCK_EARNINGS_DATA = [
   { date: '2023-10-01', totalRiders: 45, presentRiders: 42, absentRiders: 3, totalEarnings: 35800 },
   { date: '2023-10-02', totalRiders: 45, presentRiders: 41, absentRiders: 4, totalEarnings: 34500 },
@@ -38,7 +36,6 @@ const MOCK_EARNINGS_DATA = [
   { date: '2023-10-07', totalRiders: 45, presentRiders: 39, absentRiders: 6, totalEarnings: 32900 },
 ];
 
-// Mock absent riders data
 const MOCK_ABSENT_RIDERS = [
   {
     id: 'R001',
@@ -129,7 +126,6 @@ const AdminEarningsPage = () => {
   const [showRiderDetails, setShowRiderDetails] = useState(false);
   const [showReportExport, setShowReportExport] = useState(false);
   
-  // Calculate aggregate statistics
   const stats = {
     totalEarnings: MOCK_EARNINGS_DATA.reduce((sum, day) => sum + day.totalEarnings, 0),
     averageDailyEarnings: Math.round(
@@ -142,7 +138,6 @@ const AdminEarningsPage = () => {
     )
   };
   
-  // Format data for the chart
   const chartData = MOCK_EARNINGS_DATA.map(day => ({
     date: new Date(day.date).toLocaleDateString([], { day: 'numeric', month: 'short' }),
     earnings: day.totalEarnings,
@@ -150,7 +145,6 @@ const AdminEarningsPage = () => {
     absentRiders: day.absentRiders
   }));
   
-  // Filter absent riders based on search
   const filteredAbsentRiders = MOCK_ABSENT_RIDERS.filter(rider => 
     rider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     rider.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -190,7 +184,6 @@ const AdminEarningsPage = () => {
         </p>
       </div>
       
-      {/* Date Range Selector */}
       <div className="bg-card rounded-lg shadow p-5">
         <div className="flex flex-col sm:flex-row justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -234,14 +227,13 @@ const AdminEarningsPage = () => {
         </div>
       </div>
       
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div 
           className="bg-card rounded-lg shadow p-4 border-l-4 border-green-500 cursor-pointer hover:shadow-md transition-shadow"
           onClick={() => toast.info("Total earnings for selected period")}
         >
           <p className="text-sm text-muted-foreground">Total Earnings</p>
-          <p className="text-2xl font-bold">₹{stats.totalEarnings.toLocaleString()}</p>
+          <p className="text-2xl font-bold flex items-center"><IndianRupee className="h-4 w-4 mr-1" />{stats.totalEarnings.toLocaleString()}</p>
           <p className="text-xs text-muted-foreground mt-1">For selected period</p>
         </div>
         
@@ -250,7 +242,7 @@ const AdminEarningsPage = () => {
           onClick={() => toast.info("Average daily earnings for selected period")}
         >
           <p className="text-sm text-muted-foreground">Avg. Daily Earnings</p>
-          <p className="text-2xl font-bold">₹{stats.averageDailyEarnings.toLocaleString()}</p>
+          <p className="text-2xl font-bold flex items-center"><IndianRupee className="h-4 w-4 mr-1" />{stats.averageDailyEarnings.toLocaleString()}</p>
           <p className="text-xs text-muted-foreground mt-1">Per day average</p>
         </div>
         
@@ -276,7 +268,6 @@ const AdminEarningsPage = () => {
         </div>
       </div>
       
-      {/* Earnings Chart */}
       <div className="bg-card rounded-lg shadow p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold">Earnings Trend</h2>
@@ -331,7 +322,6 @@ const AdminEarningsPage = () => {
         </div>
       </div>
       
-      {/* Absent Riders Section */}
       <div className="bg-card rounded-lg shadow overflow-hidden">
         <div className="p-5 border-b border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-2">
@@ -432,7 +422,6 @@ const AdminEarningsPage = () => {
         )}
       </div>
       
-      {/* Rider Details Dialog */}
       <Dialog open={showRiderDetails} onOpenChange={setShowRiderDetails}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
@@ -487,15 +476,24 @@ const AdminEarningsPage = () => {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-sm">Monthly Earnings:</span>
-                      <span className="text-sm font-medium">₹{selectedRider.earnings.monthly.toLocaleString()}</span>
+                      <span className="text-sm font-medium flex items-center">
+                        <IndianRupee className="h-3 w-3 mr-1" />
+                        {selectedRider.earnings.monthly.toLocaleString()}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">Weekly Average:</span>
-                      <span className="text-sm font-medium">₹{selectedRider.earnings.weekly.toLocaleString()}</span>
+                      <span className="text-sm font-medium flex items-center">
+                        <IndianRupee className="h-3 w-3 mr-1" />
+                        {selectedRider.earnings.weekly.toLocaleString()}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">Daily Average:</span>
-                      <span className="text-sm font-medium">₹{selectedRider.earnings.daily.toLocaleString()}</span>
+                      <span className="text-sm font-medium flex items-center">
+                        <IndianRupee className="h-3 w-3 mr-1" />
+                        {selectedRider.earnings.daily.toLocaleString()}
+                      </span>
                     </div>
                   </div>
                   
@@ -547,7 +545,6 @@ const AdminEarningsPage = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Export Report Dialog */}
       <Dialog open={showReportExport} onOpenChange={setShowReportExport}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
