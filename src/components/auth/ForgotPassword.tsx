@@ -1,14 +1,15 @@
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, AlertCircle, ArrowLeft, Check } from 'lucide-react';
+import { Mail, AlertCircle, Check } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
   const [error, setError] = useState('');
+  const [resetSent, setResetSent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,28 +29,28 @@ const ForgotPassword = () => {
     setError('');
     setIsLoading(true);
     
-    // Simulate API call
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Call Supabase to send a password reset email
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
       
-      // For demo purposes, we'll check if the email exists in our mock data
-      const isValidUser = ['admin@example.com', 'user@example.com'].includes(email);
-      
-      if (isValidUser) {
-        setEmailSent(true);
-        toast.success('Password reset instructions sent to your email');
-      } else {
-        setError('No account found with this email address');
+      if (error) {
+        throw error;
       }
-    } catch (err) {
-      setError('An error occurred. Please try again.');
-      toast.error('Failed to send reset email');
+      
+      setResetSent(true);
+      toast.success('Password reset instructions sent to your email');
+    } catch (err: any) {
+      console.error('Password reset error:', err);
+      setError(err.message || 'An error occurred. Please try again.');
+      toast.error('Failed to send reset instructions');
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (emailSent) {
+  if (resetSent) {
     return (
       <div className="w-full max-w-md mx-auto p-6 space-y-8 text-center">
         <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
@@ -57,34 +58,24 @@ const ForgotPassword = () => {
         </div>
         
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Check your email</h1>
+          <h1 className="text-3xl font-bold">Check Your Email</h1>
           <p className="text-muted-foreground">
-            We've sent password reset instructions to <strong>{email}</strong>.
+            We've sent password reset instructions to <strong>{email}</strong>. 
             Please check your inbox and follow the link to reset your password.
           </p>
         </div>
         
         <div className="pt-4">
           <p className="text-sm text-muted-foreground mb-4">
-            Didn't receive the email? Check your spam folder or try again.
+            If you don't see the email, check your spam folder or make sure you entered the correct email address.
           </p>
           
-          <div className="space-y-4">
-            <button 
-              onClick={() => setEmailSent(false)}
-              className="btn-secondary w-full"
-            >
-              Try again
-            </button>
-            
-            <Link 
-              to="/login" 
-              className="flex items-center justify-center text-sm text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft size={16} className="mr-1" />
-              Back to login
-            </Link>
-          </div>
+          <Link 
+            to="/login" 
+            className="btn-primary"
+          >
+            Return to Login
+          </Link>
         </div>
       </div>
     );
@@ -93,9 +84,9 @@ const ForgotPassword = () => {
   return (
     <div className="w-full max-w-md mx-auto p-6 space-y-8">
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold">Reset your password</h1>
+        <h1 className="text-3xl font-bold">Forgot Password</h1>
         <p className="text-muted-foreground">
-          Enter your email address and we'll send you instructions to reset your password
+          Enter your email and we'll send you a link to reset your password
         </p>
       </div>
       
@@ -109,7 +100,7 @@ const ForgotPassword = () => {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <label htmlFor="email" className="text-sm font-medium">
-            Email address
+            Email
           </label>
           <div className="relative">
             <Mail size={18} className="absolute left-3 top-2.5 text-muted-foreground" />
@@ -120,7 +111,6 @@ const ForgotPassword = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input-field pl-10"
-              autoComplete="email"
               required
             />
           </div>
@@ -133,24 +123,21 @@ const ForgotPassword = () => {
         >
           {isLoading ? (
             <>
-              <span className="opacity-0">Send reset instructions</span>
+              <span className="opacity-0">Send Reset Instructions</span>
               <span className="absolute inset-0 flex items-center justify-center">
                 <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
               </span>
             </>
           ) : (
-            'Send reset instructions'
+            'Send Reset Instructions'
           )}
         </button>
       </form>
       
-      <div className="text-center">
-        <Link 
-          to="/login" 
-          className="flex items-center justify-center text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft size={16} className="mr-1" />
-          Back to login
+      <div className="text-center text-sm text-muted-foreground">
+        Remember your password?{' '}
+        <Link to="/login" className="text-primary hover:underline">
+          Sign in
         </Link>
       </div>
     </div>

@@ -2,6 +2,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
 // Define user types and structure
 export type UserRole = 'user' | 'admin';
@@ -23,42 +25,12 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string, remember?: boolean) => Promise<boolean>;
+  signInWithGoogle: () => Promise<void>;
   logout: () => void;
   isAdmin: boolean;
 }
 
-// Mock users for testing
-const MOCK_USERS: Record<string, { user: User; password: string }> = {
-  'admin@example.com': {
-    user: {
-      id: 'admin-1',
-      username: 'admin',
-      fullName: 'Admin User',
-      email: 'admin@example.com',
-      mobile: '9876543210',
-      role: 'admin',
-      isApproved: true,
-      isBlocked: false,
-      lastActive: new Date(),
-    },
-    password: 'admin123'
-  },
-  'user@example.com': {
-    user: {
-      id: 'user-1',
-      username: 'testuser',
-      fullName: 'Test User',
-      email: 'user@example.com',
-      mobile: '9876543211',
-      role: 'user',
-      isApproved: true,
-      isBlocked: false,
-      lastActive: new Date(),
-    },
-    password: 'user123'
-  }
-};
-
+// Create the AuthContext
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -66,68 +38,127 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 
-  // Check for stored user on mount
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Failed to parse stored user:', error);
-        localStorage.removeItem('user');
-      }
-    }
-    setIsLoading(false);
-  }, []);
+  // Convert Supabase user to our User interface
+  const formatUser = (supabaseUser: SupabaseUser | null): User | null => {
+    if (!supabaseUser) return null;
+    
+    return {
+      id: supabaseUser.id,
+      username: supabaseUser.email?.split('@')[0] || '',
+      fullName: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
+      email: supabaseUser.email || '',
+      mobile: supabaseUser.phone || '',
+      role: supabaseUser.email === 'admin@example.com' ? 'admin' : 'user', // Default role assignment
+      isApproved: true, // Default to true for now
+      isBlocked: false, // Default to false for now
+      lastActive: new Date(),
+    };
+  };
 
+  // Check auth state on mount and subscribe to auth changes
+  useEffect(() => {
+    setIsLoading(true);
+    
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setUser(formatUser(session.user));
+      }
+      setIsLoading(false);
+    });
+
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          setUser(formatUser(session.user));
+          navigate('/dashboard');
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          navigate('/login');
+        }
+      }
+    );
+
+    // Cleanup subscription
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
+
+  // Login with email and password
   const login = async (email: string, password: string, remember: boolean = false): Promise<boolean> => {
     setIsLoading(true);
     
-    // Simulate API call/validation
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const userRecord = MOCK_USERS[email];
-    
-    if (!userRecord || userRecord.password !== password) {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        toast.error(error.message);
+        setIsLoading(false);
+        return false;
+      }
+      
+      if (data.user) {
+        const formattedUser = formatUser(data.user);
+        if (formattedUser) {
+          setUser(formattedUser);
+          toast.success(`Welcome back, ${formattedUser.fullName}!`);
+          
+          // If remember me is checked, the session will be persisted by Supabase
+          // We don't need to do anything extra here
+          
+          return true;
+        }
+      }
+      
       setIsLoading(false);
-      toast.error('Invalid credentials');
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error('An error occurred during login.');
+      setIsLoading(false);
       return false;
     }
-    
-    const userData = userRecord.user;
-    
-    if (userData.isBlocked) {
-      setIsLoading(false);
-      toast.error('Your account has been blocked. Please contact admin.');
-      return false;
-    }
-    
-    if (!userData.isApproved) {
-      setIsLoading(false);
-      toast.error('Your account is pending approval.');
-      return false;
-    }
-    
-    // Update last active timestamp
-    userData.lastActive = new Date();
-    
-    setUser(userData);
-    
-    // Store user data if remember me is checked
-    if (remember) {
-      localStorage.setItem('user', JSON.stringify(userData));
-    }
-    
-    toast.success(`Welcome back, ${userData.fullName}!`);
-    setIsLoading(false);
-    return true;
   };
   
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-    navigate('/login');
-    toast.success('You have been logged out');
+  // Sign in with Google
+  const signInWithGoogle = async (): Promise<void> => {
+    setIsLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+      
+      if (error) {
+        toast.error(error.message);
+      }
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      toast.error('Failed to sign in with Google');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Logout
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      navigate('/login');
+      toast.success('You have been logged out');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('An error occurred during logout');
+    }
   };
   
   return (
@@ -137,6 +168,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isAuthenticated: !!user, 
         isLoading, 
         login, 
+        signInWithGoogle,
         logout,
         isAdmin: user?.role === 'admin' 
       }}

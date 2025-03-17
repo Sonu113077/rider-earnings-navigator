@@ -13,7 +13,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   
-  const { login, isAuthenticated, isAdmin } = useAuth();
+  const { login, signInWithGoogle, isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -42,7 +42,7 @@ const Login = () => {
       
       if (success) {
         // Redirect to the appropriate dashboard based on role
-        if (email === 'admin@example.com') {
+        if (isAdmin) {
           navigate('/admin');
         } else {
           navigate(from);
@@ -57,15 +57,8 @@ const Login = () => {
     setIsGoogleLoading(true);
     
     try {
-      // Simulate Google login API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // For demo purposes, let's simulate successful login with a test user
-      const success = await login('user@example.com', 'user123', true);
-      
-      if (success) {
-        navigate('/dashboard');
-      }
+      await signInWithGoogle();
+      // The redirect will be handled by Supabase OAuth flow
     } catch (err) {
       setError('Failed to sign in with Google');
       toast.error('Google sign-in failed');
@@ -79,15 +72,6 @@ const Login = () => {
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold">Welcome back</h1>
         <p className="text-muted-foreground">Sign in to your account to continue</p>
-      </div>
-
-      {/* Test Credentials Info */}
-      <div className="p-4 bg-muted/50 rounded-lg space-y-2">
-        <p className="text-sm font-medium">Test Credentials:</p>
-        <div className="text-xs space-y-1">
-          <p><span className="font-semibold">Admin:</span> admin@example.com / admin123</p>
-          <p><span className="font-semibold">User:</span> user@example.com / user123</p>
-        </div>
       </div>
       
       {error && (
