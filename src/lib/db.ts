@@ -27,8 +27,11 @@ export const updateProfile = async (userId: string, updates: any) => {
 export const getEarnings = async (userId: string, dateFrom?: string, dateTo?: string) => {
   let query = supabase
     .from('earnings')
-    .select('*')
-    .eq('user_id', userId);
+    .select('*');
+    
+  if (userId) {
+    query = query.eq('user_id', userId);
+  }
     
   if (dateFrom) {
     query = query.gte('date', dateFrom);
