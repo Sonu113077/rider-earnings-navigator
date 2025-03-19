@@ -35,7 +35,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Add your personal email to this list of admin emails
-const ADMIN_EMAILS = ['admin@example.com', 'your.email@example.com']; // Replace with your actual email
+const ADMIN_EMAILS = ['admin@example.com', 'saunvirsingh19@gmail.com']; // Your email has been added
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Determine if the email is in the admin list
       const isAdminEmail = ADMIN_EMAILS.includes(supabaseUser.email || '');
-      const role = isAdminEmail ? 'admin' : (profile?.role || 'user');
+      const role: UserRole = isAdminEmail ? 'admin' : (profile?.role as UserRole || 'user');
       
       // If the user is an admin by email but not in the database, update their role
       if (isAdminEmail && profile && profile.role !== 'admin') {
