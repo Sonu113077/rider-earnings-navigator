@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
+import { getProfile, updateProfile } from '@/lib/db';
 
 // Define user types and structure
 export type UserRole = 'user' | 'admin';
@@ -33,26 +34,58 @@ interface AuthContextType {
 // Create the AuthContext
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Add your personal email to this list of admin emails
+const ADMIN_EMAILS = ['admin@example.com', 'your.email@example.com']; // Replace with your actual email
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 
   // Convert Supabase user to our User interface
-  const formatUser = (supabaseUser: SupabaseUser | null): User | null => {
+  const formatUser = async (supabaseUser: SupabaseUser | null): Promise<User | null> => {
     if (!supabaseUser) return null;
     
-    return {
-      id: supabaseUser.id,
-      username: supabaseUser.email?.split('@')[0] || '',
-      fullName: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
-      email: supabaseUser.email || '',
-      mobile: supabaseUser.phone || '',
-      role: supabaseUser.email === 'admin@example.com' ? 'admin' : 'user', // Default role assignment
-      isApproved: true, // Default to true for now
-      isBlocked: false, // Default to false for now
-      lastActive: new Date(),
-    };
+    try {
+      // Check if user has a profile in the database
+      const profile = await getProfile(supabaseUser.id);
+      
+      // Determine if the email is in the admin list
+      const isAdminEmail = ADMIN_EMAILS.includes(supabaseUser.email || '');
+      const role = isAdminEmail ? 'admin' : (profile?.role || 'user');
+      
+      // If the user is an admin by email but not in the database, update their role
+      if (isAdminEmail && profile && profile.role !== 'admin') {
+        await updateProfile(supabaseUser.id, { role: 'admin' });
+      }
+      
+      return {
+        id: supabaseUser.id,
+        username: profile?.username || supabaseUser.email?.split('@')[0] || '',
+        fullName: profile?.full_name || supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
+        email: supabaseUser.email || '',
+        mobile: profile?.mobile || supabaseUser.phone || '',
+        role: role,
+        isApproved: profile?.is_approved ?? true,
+        isBlocked: profile?.is_blocked ?? false,
+        lastActive: new Date(),
+      };
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      
+      // Fall back to basic user info if profile fetch fails
+      return {
+        id: supabaseUser.id,
+        username: supabaseUser.email?.split('@')[0] || '',
+        fullName: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
+        email: supabaseUser.email || '',
+        mobile: supabaseUser.phone || '',
+        role: ADMIN_EMAILS.includes(supabaseUser.email || '') ? 'admin' : 'user',
+        isApproved: true,
+        isBlocked: false,
+        lastActive: new Date(),
+      };
+    }
   };
 
   // Check auth state on mount and subscribe to auth changes
@@ -60,18 +93,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
-        setUser(formatUser(session.user));
+        const formattedUser = await formatUser(session.user);
+        setUser(formattedUser);
       }
       setIsLoading(false);
     });
 
     // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         if (event === 'SIGNED_IN' && session) {
-          setUser(formatUser(session.user));
+          const formattedUser = await formatUser(session.user);
+          setUser(formattedUser);
           navigate('/dashboard');
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
@@ -103,14 +138,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       if (data.user) {
-        const formattedUser = formatUser(data.user);
+        const formattedUser = await formatUser(data.user);
         if (formattedUser) {
           setUser(formattedUser);
           toast.success(`Welcome back, ${formattedUser.fullName}!`);
-          
-          // If remember me is checked, the session will be persisted by Supabase
-          // We don't need to do anything extra here
-          
           return true;
         }
       }
