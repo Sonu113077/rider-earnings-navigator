@@ -22,11 +22,20 @@ import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import FloatingContactButton from "./components/ui/FloatingContactButton";
 
-// Create settings and reports pages
+// Settings and reports pages
 import DashboardSettingsPage from "./pages/dashboard/DashboardSettingsPage";
 import DashboardReportsPage from "./pages/dashboard/DashboardReportsPage";
 
-const queryClient = new QueryClient();
+// Create a new QueryClient with settings for refetching and error handling
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 300000, // 5 minutes
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
