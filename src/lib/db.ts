@@ -9,17 +9,28 @@ export const getProfile = async (userId: string) => {
     .eq('id', userId)
     .single();
     
-  if (error) throw error;
+  if (error) {
+    console.error('Error getting profile:', error);
+    // Don't throw error, just return null to avoid blocking authentication
+    if (error.code === 'PGRST116') {
+      return null; // No profile found
+    }
+    throw error;
+  }
   return data;
 };
 
 export const updateProfile = async (userId: string, updates: any) => {
+  console.log('Updating profile for', userId, 'with', updates);
   const { data, error } = await supabase
     .from('profiles')
     .update(updates)
     .eq('id', userId);
     
-  if (error) throw error;
+  if (error) {
+    console.error('Error updating profile:', error);
+    throw error;
+  }
   return data;
 };
 

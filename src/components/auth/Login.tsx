@@ -11,6 +11,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   
   const { login, signInWithGoogle, isAuthenticated, isAdmin } = useAuth();
@@ -36,20 +37,23 @@ const Login = () => {
     }
     
     setError('');
+    setIsLoading(true);
     
     try {
+      console.log('Attempting login with:', email);
       const success = await login(email, password, rememberMe);
       
       if (success) {
-        // Redirect to the appropriate dashboard based on role
-        if (isAdmin) {
-          navigate('/admin');
-        } else {
-          navigate(from);
-        }
+        // Login was successful - redirect handled by auth context
+        console.log('Login successful, redirecting...');
+      } else {
+        setError('Invalid login credentials. Please check your email and password.');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('An error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -149,8 +153,18 @@ const Login = () => {
         <button
           type="submit"
           className="w-full btn-primary h-11 relative"
+          disabled={isLoading}
         >
-          Sign in
+          {isLoading ? (
+            <>
+              <span className="opacity-0">Sign in</span>
+              <span className="absolute inset-0 flex items-center justify-center">
+                <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              </span>
+            </>
+          ) : (
+            'Sign in'
+          )}
         </button>
       </form>
       

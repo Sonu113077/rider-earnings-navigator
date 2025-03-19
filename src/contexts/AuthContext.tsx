@@ -104,6 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session);
         if (event === 'SIGNED_IN' && session) {
           const formattedUser = await formatUser(session.user);
           setUser(formattedUser);
@@ -124,6 +125,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Login with email and password
   const login = async (email: string, password: string, remember: boolean = false): Promise<boolean> => {
     setIsLoading(true);
+    console.log('Attempting login with:', email);
     
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -132,6 +134,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       
       if (error) {
+        console.error('Login error:', error.message);
         toast.error(error.message);
         setIsLoading(false);
         return false;
